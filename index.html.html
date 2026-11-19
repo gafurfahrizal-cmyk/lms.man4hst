@@ -92,7 +92,7 @@
 
   <!-- KONFIGURASI UTAMA -->
   <script>
-    var IS_PREVIEW = false; // Ubah menjadi false saat mode produksi Supabase aktif
+    var IS_PREVIEW = false;
     var SUPABASE_URL = "https://fojendbtroejyeizbigz.supabase.co";
     var SUPABASE_ANON_KEY = "sb_publishable_hzVPz1ssDL00xAGHeQ6V1A_1Fv2EMbA";
     var DEFAULT_PORTAL_URL = "https://sites.google.com/view/portal-ujianman4hst/portal";
@@ -153,7 +153,7 @@
       <form id="formLoginPeserta" onsubmit="handlePesertaLogin(event)" autocomplete="off" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Username / NISN</label>
-          <input id="pesertaUsername" type="text" required autocomplete="off" placeholder="Contoh: ari01417" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+          <input id="pesertaUsername" type="text" required autocomplete="off" placeholder="Masukkan username / NISN" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
@@ -464,7 +464,7 @@
       clearTimeout(window.__toastTimer);
       window.__toastTimer = setTimeout(function () {
         box.classList.add("hidden");
-      }, 3200);
+      }, 3600);
     }
 
     function enterAppFullscreen() {
@@ -568,17 +568,8 @@
           return item.username.toLowerCase() === u.toLowerCase() && item.password_text === p;
         });
         if (!found) {
-          found = {
-            id: "p-" + Date.now(),
-            nama: u.toUpperCase(),
-            kelas: "XI A",
-            nisn: u,
-            username: u,
-            password_text: p,
-            status_ujian: "Siap",
-            pelanggaran: 0
-          };
-          stateData.peserta.push(found);
+          showToast("Username atau password simulasi tidak cocok.", true);
+          return;
         }
         currentRole = "peserta";
         currentUser = found;
@@ -587,7 +578,7 @@
       }
 
       if (!sbClient) {
-        showToast("Konfigurasi Supabase belum diatur.", true);
+        showToast("Klien Supabase belum terinisialisasi.", true);
         return;
       }
 
@@ -599,15 +590,19 @@
           .eq("password_text", p)
           .maybeSingle();
 
-        if (res.error || !res.data) {
-          showToast("Username atau password peserta tidak valid.", true);
+        if (res.error) {
+          showToast("Database Supabase: " + res.error.message, true);
+          return;
+        }
+        if (!res.data) {
+          showToast("Username atau password peserta tidak ditemukan di database.", true);
           return;
         }
         currentRole = "peserta";
         currentUser = res.data;
         openMainApp();
       } catch (err) {
-        showToast("Gagal terhubung ke database.", true);
+        showToast("Gagal terhubung ke database Supabase.", true);
       }
     }
 
@@ -625,21 +620,21 @@
       }
 
       if (!sbClient) {
-        showToast("Konfigurasi Supabase belum diatur.", true);
+        showToast("Klien Supabase belum terinisialisasi.", true);
         return;
       }
 
       try {
         var authRes = await sbClient.auth.signInWithPassword({ email: email, password: password });
         if (authRes.error || !authRes.data.user) {
-          showToast("Login admin gagal. Periksa email & password.", true);
+          showToast("Login admin gagal: " + (authRes.error ? authRes.error.message : "akun tidak valid"), true);
           return;
         }
         currentRole = "admin";
         currentUser = { nama: authRes.data.user.email, email: authRes.data.user.email };
         openMainApp();
       } catch (err) {
-        showToast("Terjadi kesalahan saat login admin.", true);
+        showToast("Terjadi kesalahan saat login admin ke Supabase.", true);
       }
     }
 
@@ -678,11 +673,12 @@
       var aktifEl = document.getElementById("statAktif");
       var selesaiEl = document.getElementById("statSelesai");
       var pelEl = document.getElementById("statPelanggaran");
+      var vCount = currentUser && typeof currentUser.pelanggaran === "number" ? currentUser.pelanggaran : violationCount;
       if (aktifEl) aktifEl.textContent = examActive ? "1" : "0";
       if (selesaiEl) selesaiEl.textContent = currentUser && currentUser.status_ujian === "Selesai" ? "1" : "0";
-      if (pelEl) pelEl.textContent = violationCount > 0 ? String(violationCount) : "Aman";
+      if (pelEl) pelEl.textContent = vCount > 0 ? String(vCount) : "Aman";
       var liveCount = document.getElementById("liveViolationCount");
-      if (liveCount) liveCount.textContent = String(violationCount);
+      if (liveCount) liveCount.textContent = String(vCount);
     }
 
     function renderPesertaNav() {
@@ -696,14 +692,14 @@
 
       desk.innerHTML = items.map(function (it) {
         var active = currentPesertaTab === it.id;
-        return '<button type="button" onclick="switchPesertaTab('' + it.id + '')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
+        return '<button type="button" onclick="switchPesertaTab(\'' + it.id + '\')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
           (active ? "btn-primary-grad text-white shadow" : "text-slate-600 hover:bg-slate-100") +
           '">' + it.label + "</button>";
       }).join("");
 
       mob.innerHTML = items.map(function (it) {
         var active = currentPesertaTab === it.id;
-        return '<button type="button" onclick="switchPesertaTab('' + it.id + '')" class="flex-1 py-2 px-2 rounded-2xl text-xs font-bold transition ' +
+        return '<button type="button" onclick="switchPesertaTab(\'' + it.id + '\')" class="flex-1 py-2 px-2 rounded-2xl text-xs font-bold transition ' +
           (active ? "text-purple-700 bg-purple-50" : "text-slate-500") +
           '">' + it.label + "</button>";
       }).join("");
@@ -729,14 +725,14 @@
 
       desk.innerHTML = items.map(function (it) {
         var active = currentAdminTab === it.id;
-        return '<button type="button" onclick="switchAdminTab('' + it.id + '')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
+        return '<button type="button" onclick="switchAdminTab(\'' + it.id + '\')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
           (active ? "btn-primary-grad text-white shadow" : "text-slate-600 hover:bg-slate-100") +
           '">' + it.label + "</button>";
       }).join("");
 
       mob.innerHTML = items.map(function (it) {
         var active = currentAdminTab === it.id;
-        return '<button type="button" onclick="switchAdminTab('' + it.id + '')" class="flex-1 py-2 px-1.5 rounded-2xl text-[11px] font-bold transition ' +
+        return '<button type="button" onclick="switchAdminTab(\'' + it.id + '\')" class="flex-1 py-2 px-1.5 rounded-2xl text-[11px] font-bold transition ' +
           (active ? "text-purple-700 bg-purple-50" : "text-slate-500") +
           '">' + it.label + "</button>";
       }).join("");
@@ -756,12 +752,17 @@
       refreshPesertaViews();
     }
 
-    function openPortalLangsung(customUrl) {
+    async function openPortalLangsung(customUrl) {
       enterAppFullscreen();
       var targetUrl = customUrl || DEFAULT_PORTAL_URL;
       examActive = true;
       if (currentUser) {
         currentUser.status_ujian = "Sedang Ujian";
+        if (!IS_PREVIEW && sbClient && currentUser.id) {
+          try {
+            await sbClient.from("peserta").update({ status_ujian: "Sedang Ujian" }).eq("id", currentUser.id);
+          } catch (e) {}
+        }
       }
       updatePesertaStats();
       document.getElementById("activeExamBar").classList.remove("hidden");
@@ -769,29 +770,50 @@
       showToast("Portal Ujian MAN 4 HST dibuka. Pengawasan aktif.");
     }
 
-    function finishExamSession() {
+    async function finishExamSession() {
       examActive = false;
       if (currentUser) {
         currentUser.status_ujian = "Selesai";
+        if (!IS_PREVIEW && sbClient && currentUser.id) {
+          try {
+            await sbClient.from("peserta").update({ status_ujian: "Selesai" }).eq("id", currentUser.id);
+          } catch (e) {}
+        }
       }
       document.getElementById("activeExamBar").classList.add("hidden");
       updatePesertaStats();
       showToast("Sesi ujian ditandai selesai.");
     }
 
-    function recordViolation(reason) {
+    async function recordViolation(reason) {
       if (!examActive || currentRole !== "peserta") return;
       violationCount += 1;
+      var nextCount = (currentUser && typeof currentUser.pelanggaran === "number" ? currentUser.pelanggaran : 0) + 1;
       if (currentUser) {
-        currentUser.pelanggaran = violationCount;
+        currentUser.pelanggaran = nextCount;
       }
+      var waktuStr = new Date().toLocaleTimeString("id-ID");
       stateData.logs.unshift({
         id: "log-" + Date.now(),
         nama: currentUser ? currentUser.nama : "Peserta",
         kelas: currentUser ? currentUser.kelas : "-",
         alasan: reason,
-        waktu: new Date().toLocaleTimeString("id-ID")
+        waktu: waktuStr
       });
+
+      if (!IS_PREVIEW && sbClient && currentUser && currentUser.id) {
+        try {
+          await sbClient.from("peserta").update({ pelanggaran: nextCount }).eq("id", currentUser.id);
+          await sbClient.from("log_pelanggaran").insert([{
+            peserta_id: currentUser.id,
+            nama: currentUser.nama,
+            kelas: currentUser.kelas,
+            alasan: reason,
+            waktu: waktuStr
+          }]);
+        } catch (e) {}
+      }
+
       updatePesertaStats();
       refreshPesertaViews();
       showToast("Peringatan anti curang: " + reason, true);
@@ -812,12 +834,12 @@
     async function refreshPesertaViews() {
       var listEl = document.getElementById("jadwalUjianList");
       var badgeEl = document.getElementById("jadwalCountBadge");
-      var items = stateData.jadwal || [];
+      var items = IS_PREVIEW ? stateData.jadwal : [];
 
       if (!IS_PREVIEW && sbClient) {
         try {
           var qJ = await sbClient.from("jadwal_ujian").select("*");
-          if (!qJ.error && Array.isArray(qJ.data) && qJ.data.length > 0) {
+          if (!qJ.error && Array.isArray(qJ.data)) {
             items = qJ.data;
           }
         } catch (e) {}
@@ -825,7 +847,7 @@
 
       badgeEl.textContent = items.length + " Ujian";
       if (!items.length) {
-        listEl.innerHTML = '<div class="glass-card rounded-2xl p-5 text-xs text-slate-500">Belum ada jadwal tambahan. Gunakan tombol <strong>Mulai Ujian</strong> di atas.</div>';
+        listEl.innerHTML = '<div class="glass-card rounded-2xl p-5 text-xs text-slate-500">Belum ada jadwal tambahan di database. Gunakan tombol <strong>Mulai Ujian</strong> di atas.</div>';
       } else {
         listEl.innerHTML = items.map(function (it) {
           var u = it.url || DEFAULT_PORTAL_URL;
@@ -835,13 +857,13 @@
               '<h4 class="text-sm font-extrabold text-slate-900 truncate">' + (it.judul || "Portal Ujian MAN 4 HST") + "</h4>" +
               '<p class="text-xs text-slate-500">Durasi: ' + (it.durasi || "90 Menit") + "</p>" +
             "</div>" +
-            '<button type="button" onclick="openPortalLangsung('' + u.replace(/'/g, "\'") + '')" class="btn-primary-grad text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shrink-0">Mulai</button>' +
+            '<button type="button" onclick="openPortalLangsung(\'' + u.replace(/'/g, "\\'") + '\')" class="btn-primary-grad text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shrink-0">Mulai</button>' +
           "</div>";
         }).join("");
       }
 
       var matEl = document.getElementById("materiListContainer");
-      var mats = stateData.materi || [];
+      var mats = IS_PREVIEW ? stateData.materi : [];
       if (!IS_PREVIEW && sbClient) {
         try {
           var qM = await sbClient.from("materi_info").select("*");
@@ -877,10 +899,18 @@
           var pRes = await sbClient.from("peserta").select("*");
           if (!pRes.error && Array.isArray(pRes.data)) {
             stateData.peserta = pRes.data;
+          } else if (pRes.error) {
+            showToast("Tabel peserta: " + pRes.error.message, true);
           }
+
           var mRes = await sbClient.from("materi_info").select("*");
           if (!mRes.error && Array.isArray(mRes.data)) {
             stateData.materi = mRes.data;
+          }
+
+          var lRes = await sbClient.from("log_pelanggaran").select("*");
+          if (!lRes.error && Array.isArray(lRes.data)) {
+            stateData.logs = lRes.data;
           }
         } catch (e) {}
       }
@@ -899,7 +929,7 @@
               "</div>" +
             "</div>";
           }).join("")
-        : '<p class="text-xs text-slate-500">Belum ada peserta terdaftar.</p>';
+        : '<p class="text-xs text-slate-500">Belum ada peserta terdaftar di database.</p>';
 
       var pList = document.getElementById("adminPesertaList");
       pList.innerHTML = stateData.peserta.length
@@ -912,12 +942,14 @@
         : '<p class="text-xs text-slate-500">Belum ada data peserta.</p>';
 
       var mList = document.getElementById("adminMateriList");
-      mList.innerHTML = stateData.materi.map(function (m) {
-        return '<div class="glass-card rounded-2xl p-4 border border-slate-100">' +
-          '<h4 class="text-xs font-extrabold text-slate-900">' + m.judul + "</h4>" +
-          '<p class="text-xs text-slate-600 mt-1">' + m.konten + "</p>" +
-        "</div>";
-      }).join("");
+      mList.innerHTML = stateData.materi.length
+        ? stateData.materi.map(function (m) {
+            return '<div class="glass-card rounded-2xl p-4 border border-slate-100">' +
+              '<h4 class="text-xs font-extrabold text-slate-900">' + m.judul + "</h4>" +
+              '<p class="text-xs text-slate-600 mt-1">' + m.konten + "</p>" +
+            "</div>";
+          }).join("")
+        : '<p class="text-xs text-slate-500">Belum ada informasi materi.</p>';
 
       var lList = document.getElementById("adminLogList");
       lList.innerHTML = stateData.logs.length
@@ -937,8 +969,7 @@
       var username = document.getElementById("newPesertaUsername").value.trim();
       var password_text = document.getElementById("newPesertaPassword").value.trim();
 
-      var newRow = {
-        id: "p-" + Date.now(),
+      var payload = {
         nama: nama,
         kelas: kelas,
         nisn: username,
@@ -950,26 +981,20 @@
 
       if (!IS_PREVIEW && sbClient) {
         try {
-          var ins = await sbClient.from("peserta").insert([{
-            nama: nama,
-            kelas: kelas,
-            nisn: username,
-            username: username,
-            password_text: password_text,
-            status_ujian: "Siap",
-            pelanggaran: 0
-          }]);
+          var ins = await sbClient.from("peserta").insert([payload]).select().single();
           if (ins.error) {
-            showToast("Gagal menyimpan peserta ke Supabase.", true);
+            showToast("Gagal simpan ke Supabase: " + ins.error.message, true);
             return;
           }
+          stateData.peserta.push(ins.data || payload);
         } catch (e) {
           showToast("Kesalahan jaringan saat menambah peserta.", true);
           return;
         }
+      } else {
+        stateData.peserta.push(Object.assign({ id: "p-" + Date.now() }, payload));
       }
 
-      stateData.peserta.push(newRow);
       event.target.reset();
       refreshAdminViews();
       showToast("Peserta berhasil ditambahkan.");
@@ -980,8 +1005,15 @@
       if (!target) return;
       if (!IS_PREVIEW && sbClient && target.id) {
         try {
-          await sbClient.from("peserta").delete().eq("id", target.id);
-        } catch (e) {}
+          var del = await sbClient.from("peserta").delete().eq("id", target.id);
+          if (del.error) {
+            showToast("Gagal hapus di Supabase: " + del.error.message, true);
+            return;
+          }
+        } catch (e) {
+          showToast("Kesalahan jaringan saat menghapus peserta.", true);
+          return;
+        }
       }
       stateData.peserta.splice(idx, 1);
       refreshAdminViews();
@@ -992,20 +1024,24 @@
       event.preventDefault();
       var judul = document.getElementById("newMateriJudul").value.trim();
       var konten = document.getElementById("newMateriKonten").value.trim();
-      var item = {
-        id: "m-" + Date.now(),
-        judul: judul,
-        konten: konten,
-        tanggal: new Date().toLocaleDateString("id-ID")
-      };
+      var payload = { judul: judul, konten: konten };
 
       if (!IS_PREVIEW && sbClient) {
         try {
-          await sbClient.from("materi_info").insert([{ judul: judul, konten: konten }]);
-        } catch (e) {}
+          var ins = await sbClient.from("materi_info").insert([payload]).select().single();
+          if (ins.error) {
+            showToast("Gagal simpan materi: " + ins.error.message, true);
+            return;
+          }
+          stateData.materi.unshift(ins.data || Object.assign({ id: "m-" + Date.now() }, payload));
+        } catch (e) {
+          showToast("Kesalahan jaringan saat menyimpan materi.", true);
+          return;
+        }
+      } else {
+        stateData.materi.unshift(Object.assign({ id: "m-" + Date.now() }, payload));
       }
 
-      stateData.materi.unshift(item);
       event.target.reset();
       refreshAdminViews();
       showToast("Informasi berhasil disimpan.");
