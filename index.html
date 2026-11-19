@@ -428,7 +428,7 @@
 
     var stateData = {
       peserta: IS_PREVIEW ? [
-        { id: "p-1", nama: "ARI", kelas: "XI A", nisn: "01417", username: "ari01417", password_text: "M4n4hst#2026", status_ujian: "Siap", pelanggaran: 0 }
+        { id: "p-1", nama: "ARI", nama_lengkap: "ARI", kelas: "XI A", username: "ari01417", password: "M4n4hst#2026", status_akun: "Siap", pelanggaran: 0 }
       ] : [],
       jadwal: IS_PREVIEW ? [
         {
@@ -450,6 +450,16 @@
       ] : [],
       logs: []
     };
+
+    function getPesertaDisplayName(p) {
+      if (!p) return "Peserta";
+      return p.nama_lengkap || p.nama || p.username || "Peserta";
+    }
+
+    function getPesertaStatus(p) {
+      if (!p) return "Siap";
+      return p.status_akun || p.status_ujian || "Siap";
+    }
 
     function showToast(message, isWarn) {
       var box = document.getElementById("toastBox");
@@ -565,7 +575,7 @@
 
       if (IS_PREVIEW) {
         var found = stateData.peserta.find(function (item) {
-          return item.username.toLowerCase() === u.toLowerCase() && item.password_text === p;
+          return item.username.toLowerCase() === u.toLowerCase() && (item.password === p || item.password_text === p);
         });
         if (!found) {
           showToast("Username atau password simulasi tidak cocok.", true);
@@ -587,7 +597,7 @@
           .from("peserta")
           .select("*")
           .eq("username", u)
-          .eq("password_text", p)
+          .eq("password", p)
           .maybeSingle();
 
         if (res.error) {
@@ -661,11 +671,11 @@
 
     function renderPesertaProfile() {
       if (!currentUser) return;
-      var nama = currentUser.nama || "Peserta";
+      var nama = getPesertaDisplayName(currentUser);
       document.getElementById("pesertaAvatar").textContent = nama.charAt(0).toUpperCase();
       document.getElementById("pesertaNamaDisplay").textContent = nama;
       document.getElementById("pesertaMetaDisplay").textContent =
-        (currentUser.kelas || "Kelas") + " • NISN: " + (currentUser.nisn || currentUser.username || "-");
+        (currentUser.kelas || "Kelas") + " • Username: " + (currentUser.username || "-");
       updatePesertaStats();
     }
 
@@ -674,8 +684,9 @@
       var selesaiEl = document.getElementById("statSelesai");
       var pelEl = document.getElementById("statPelanggaran");
       var vCount = currentUser && typeof currentUser.pelanggaran === "number" ? currentUser.pelanggaran : violationCount;
+      var st = getPesertaStatus(currentUser);
       if (aktifEl) aktifEl.textContent = examActive ? "1" : "0";
-      if (selesaiEl) selesaiEl.textContent = currentUser && currentUser.status_ujian === "Selesai" ? "1" : "0";
+      if (selesaiEl) selesaiEl.textContent = st === "Selesai" ? "1" : "0";
       if (pelEl) pelEl.textContent = vCount > 0 ? String(vCount) : "Aman";
       var liveCount = document.getElementById("liveViolationCount");
       if (liveCount) liveCount.textContent = String(vCount);
@@ -692,14 +703,14 @@
 
       desk.innerHTML = items.map(function (it) {
         var active = currentPesertaTab === it.id;
-        return '<button type="button" onclick="switchPesertaTab(\'' + it.id + '\')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
+        return '<button type="button" onclick="switchPesertaTab('' + it.id + '')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
           (active ? "btn-primary-grad text-white shadow" : "text-slate-600 hover:bg-slate-100") +
           '">' + it.label + "</button>";
       }).join("");
 
       mob.innerHTML = items.map(function (it) {
         var active = currentPesertaTab === it.id;
-        return '<button type="button" onclick="switchPesertaTab(\'' + it.id + '\')" class="flex-1 py-2 px-2 rounded-2xl text-xs font-bold transition ' +
+        return '<button type="button" onclick="switchPesertaTab('' + it.id + '')" class="flex-1 py-2 px-2 rounded-2xl text-xs font-bold transition ' +
           (active ? "text-purple-700 bg-purple-50" : "text-slate-500") +
           '">' + it.label + "</button>";
       }).join("");
@@ -725,14 +736,14 @@
 
       desk.innerHTML = items.map(function (it) {
         var active = currentAdminTab === it.id;
-        return '<button type="button" onclick="switchAdminTab(\'' + it.id + '\')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
+        return '<button type="button" onclick="switchAdminTab('' + it.id + '')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
           (active ? "btn-primary-grad text-white shadow" : "text-slate-600 hover:bg-slate-100") +
           '">' + it.label + "</button>";
       }).join("");
 
       mob.innerHTML = items.map(function (it) {
         var active = currentAdminTab === it.id;
-        return '<button type="button" onclick="switchAdminTab(\'' + it.id + '\')" class="flex-1 py-2 px-1.5 rounded-2xl text-[11px] font-bold transition ' +
+        return '<button type="button" onclick="switchAdminTab('' + it.id + '')" class="flex-1 py-2 px-1.5 rounded-2xl text-[11px] font-bold transition ' +
           (active ? "text-purple-700 bg-purple-50" : "text-slate-500") +
           '">' + it.label + "</button>";
       }).join("");
@@ -757,10 +768,10 @@
       var targetUrl = customUrl || DEFAULT_PORTAL_URL;
       examActive = true;
       if (currentUser) {
-        currentUser.status_ujian = "Sedang Ujian";
-        if (!IS_PREVIEW && sbClient && currentUser.id) {
+        currentUser.status_akun = "Sedang Ujian";
+        if (!IS_PREVIEW && sbClient && currentUser.username) {
           try {
-            await sbClient.from("peserta").update({ status_ujian: "Sedang Ujian" }).eq("id", currentUser.id);
+            await sbClient.from("peserta").update({ status_akun: "Sedang Ujian" }).eq("username", currentUser.username);
           } catch (e) {}
         }
       }
@@ -773,10 +784,10 @@
     async function finishExamSession() {
       examActive = false;
       if (currentUser) {
-        currentUser.status_ujian = "Selesai";
-        if (!IS_PREVIEW && sbClient && currentUser.id) {
+        currentUser.status_akun = "Selesai";
+        if (!IS_PREVIEW && sbClient && currentUser.username) {
           try {
-            await sbClient.from("peserta").update({ status_ujian: "Selesai" }).eq("id", currentUser.id);
+            await sbClient.from("peserta").update({ status_akun: "Selesai" }).eq("username", currentUser.username);
           } catch (e) {}
         }
       }
@@ -789,24 +800,23 @@
       if (!examActive || currentRole !== "peserta") return;
       violationCount += 1;
       var nextCount = (currentUser && typeof currentUser.pelanggaran === "number" ? currentUser.pelanggaran : 0) + 1;
+      var namaPeserta = getPesertaDisplayName(currentUser);
       if (currentUser) {
         currentUser.pelanggaran = nextCount;
       }
       var waktuStr = new Date().toLocaleTimeString("id-ID");
       stateData.logs.unshift({
         id: "log-" + Date.now(),
-        nama: currentUser ? currentUser.nama : "Peserta",
+        nama: namaPeserta,
         kelas: currentUser ? currentUser.kelas : "-",
         alasan: reason,
         waktu: waktuStr
       });
 
-      if (!IS_PREVIEW && sbClient && currentUser && currentUser.id) {
+      if (!IS_PREVIEW && sbClient && currentUser) {
         try {
-          await sbClient.from("peserta").update({ pelanggaran: nextCount }).eq("id", currentUser.id);
           await sbClient.from("log_pelanggaran").insert([{
-            peserta_id: currentUser.id,
-            nama: currentUser.nama,
+            nama: namaPeserta,
             kelas: currentUser.kelas,
             alasan: reason,
             waktu: waktuStr
@@ -857,7 +867,7 @@
               '<h4 class="text-sm font-extrabold text-slate-900 truncate">' + (it.judul || "Portal Ujian MAN 4 HST") + "</h4>" +
               '<p class="text-xs text-slate-500">Durasi: ' + (it.durasi || "90 Menit") + "</p>" +
             "</div>" +
-            '<button type="button" onclick="openPortalLangsung(\'' + u.replace(/'/g, "\\'") + '\')" class="btn-primary-grad text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shrink-0">Mulai</button>' +
+            '<button type="button" onclick="openPortalLangsung('' + u.replace(/'/g, "\'") + '')" class="btn-primary-grad text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shrink-0">Mulai</button>' +
           "</div>";
         }).join("");
       }
@@ -880,8 +890,9 @@
         : '<div class="glass-card rounded-2xl p-5 text-xs text-slate-500">Belum ada informasi materi.</div>';
 
       var intEl = document.getElementById("integritasListContainer");
+      var currentName = getPesertaDisplayName(currentUser);
       var myLogs = stateData.logs.filter(function (l) {
-        return !currentUser || l.nama === currentUser.nama;
+        return !currentUser || l.nama === currentName;
       });
       intEl.innerHTML = myLogs.length
         ? myLogs.map(function (l) {
@@ -918,13 +929,15 @@
       var liveBox = document.getElementById("adminLiveContainer");
       liveBox.innerHTML = stateData.peserta.length
         ? stateData.peserta.map(function (p) {
+            var displayName = getPesertaDisplayName(p);
+            var displayStatus = getPesertaStatus(p);
             return '<div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-3">' +
               "<div>" +
-                '<p class="text-xs font-extrabold text-slate-900">' + p.nama + ' <span class="text-slate-400 font-normal">(' + p.kelas + ")</span></p>" +
+                '<p class="text-xs font-extrabold text-slate-900">' + displayName + ' <span class="text-slate-400 font-normal">(' + (p.kelas || "-") + ")</span></p>" +
                 '<p class="text-[11px] text-slate-500">Username: ' + p.username + "</p>" +
               "</div>" +
               '<div class="text-right">' +
-                '<span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700">' + (p.status_ujian || "Siap") + "</span>" +
+                '<span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700">' + displayStatus + "</span>" +
                 '<p class="text-[11px] text-slate-500 mt-0.5">Pelanggaran: ' + (p.pelanggaran || 0) + "</p>" +
               "</div>" +
             "</div>";
@@ -934,8 +947,9 @@
       var pList = document.getElementById("adminPesertaList");
       pList.innerHTML = stateData.peserta.length
         ? stateData.peserta.map(function (p, idx) {
+            var displayName = getPesertaDisplayName(p);
             return '<div class="p-3 rounded-2xl bg-white border border-slate-200 flex items-center justify-between gap-2">' +
-              '<div class="text-xs"><span class="font-bold text-slate-900">' + p.nama + '</span> • ' + p.kelas + ' • <span class="font-mono text-purple-700">' + p.username + "</span></div>" +
+              '<div class="text-xs"><span class="font-bold text-slate-900">' + displayName + '</span> • ' + (p.kelas || "-") + ' • <span class="font-mono text-purple-700">' + p.username + "</span></div>" +
               '<button type="button" onclick="removePeserta(' + idx + ')" class="text-xs font-bold text-rose-600 hover:underline">Hapus</button>' +
             "</div>";
           }).join("")
@@ -967,16 +981,15 @@
       var nama = document.getElementById("newPesertaNama").value.trim();
       var kelas = document.getElementById("newPesertaKelas").value.trim();
       var username = document.getElementById("newPesertaUsername").value.trim();
-      var password_text = document.getElementById("newPesertaPassword").value.trim();
+      var passwordVal = document.getElementById("newPesertaPassword").value.trim();
 
       var payload = {
+        username: username,
+        password: passwordVal,
+        nama_lengkap: nama,
         nama: nama,
         kelas: kelas,
-        nisn: username,
-        username: username,
-        password_text: password_text,
-        status_ujian: "Siap",
-        pelanggaran: 0
+        status_akun: "Siap"
       };
 
       if (!IS_PREVIEW && sbClient) {
@@ -1003,9 +1016,15 @@
     async function removePeserta(idx) {
       var target = stateData.peserta[idx];
       if (!target) return;
-      if (!IS_PREVIEW && sbClient && target.id) {
+      if (!IS_PREVIEW && sbClient) {
         try {
-          var del = await sbClient.from("peserta").delete().eq("id", target.id);
+          var query = sbClient.from("peserta").delete();
+          if (target.id) {
+            query = query.eq("id", target.id);
+          } else if (target.username) {
+            query = query.eq("username", target.username);
+          }
+          var del = await query;
           if (del.error) {
             showToast("Gagal hapus di Supabase: " + del.error.message, true);
             return;
