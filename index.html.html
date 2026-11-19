@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#8A56FF" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="LMS MAN4HST" />
+  <title>LMS Anti Curang — MAN 4 HST</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23D86CFB'/%3E%3Cstop offset='100%25' stop-color='%238A56FF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M32 12l16 6v13c0 11-6.5 18.5-16 22-9.5-3.5-16-11-16-22V18l16-6z' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M25 32l5 5 10-10' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --grad-primary: linear-gradient(135deg, #D86CFB 0%, #8A56FF 100%);
+      --grad-emerald: linear-gradient(135deg, #34d399 0%, #059669 100%);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: #f8fafc;
+      color: #0f172a;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 12px 32px -8px rgba(138, 86, 255, 0.12), 0 4px 12px -4px rgba(15, 23, 42, 0.05);
+    }
+    .hero-gradient {
+      background: var(--grad-primary);
+    }
+    .btn-primary-grad {
+      background: var(--grad-primary);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+    .btn-primary-grad:hover {
+      box-shadow: 0 10px 24px -6px rgba(138, 86, 255, 0.45);
+    }
+    .btn-primary-grad:active {
+      transform: scale(0.985);
+    }
+    .btn-emerald-grad {
+      background: var(--grad-emerald);
+    }
+    @media (min-width: 768px) {
+      .desktop-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 260px;
+        display: flex;
+        flex-direction: column;
+        z-index: 30;
+      }
+      .main-content-shell {
+        margin-left: 260px;
+        padding-bottom: 3rem;
+      }
+      .mobile-bottom-nav {
+        display: none !important;
+      }
+    }
+    @media (max-width: 767px) {
+      .desktop-sidebar {
+        display: none !important;
+      }
+      .main-content-shell {
+        margin-left: 0;
+        padding-bottom: 6.5rem;
+      }
+      .mobile-bottom-nav {
+        position: fixed;
+        bottom: 12px;
+        left: 12px;
+        right: 12px;
+        z-index: 40;
+        border-radius: 22px;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased selection:bg-purple-200 selection:text-purple-900">
+
+  <!-- KONFIGURASI UTAMA -->
+  <script>
+    var IS_PREVIEW = false; // Ubah menjadi false saat mode produksi Supabase aktif
+    var SUPABASE_URL = "https://fojendbtroejyeizbigz.supabase.co";
+    var SUPABASE_ANON_KEY = "sb_publishable_hzVPz1ssDL00xAGHeQ6V1A_1Fv2EMbA";
+    var DEFAULT_PORTAL_URL = "https://sites.google.com/view/portal-ujianman4hst/portal";
+  </script>
+
+  <!-- Toast Notifikasi -->
+  <div id="toastBox" class="fixed top-4 right-4 z-50 hidden max-w-sm rounded-2xl bg-slate-900/95 text-white px-4 py-3 text-sm font-medium shadow-xl border border-white/15 flex items-center gap-2.5">
+    <span id="toastDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0"></span>
+    <span id="toastText">Pemberitahuan</span>
+  </div>
+
+  <!-- Banner Install PWA -->
+  <div id="installBanner" class="hidden fixed top-3 left-3 right-3 md:left-auto md:right-6 md:w-96 z-40 glass-card rounded-2xl p-3.5 border border-purple-200 flex items-center justify-between gap-3">
+    <div class="min-w-0">
+      <p class="text-xs font-bold text-purple-700 uppercase tracking-wider">Aplikasi Tersedia</p>
+      <p class="text-xs text-slate-600 truncate">Install LMS MAN 4 HST ke layar utama</p>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button type="button" onclick="triggerPwaInstall()" class="btn-primary-grad text-white text-xs font-semibold px-3 py-1.5 rounded-xl">Install</button>
+      <button type="button" onclick="dismissInstallBanner()" class="text-xs text-slate-400 hover:text-slate-600 px-2 py-1.5">Tutup</button>
+    </div>
+  </div>
+
+  <!-- HALAMAN LOGIN -->
+  <div id="loginView" class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div class="w-full max-w-md glass-card rounded-3xl p-6 sm:p-8 relative z-10 border border-purple-100">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl hero-gradient flex items-center justify-center text-white shadow-lg shadow-purple-500/25">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-lg font-extrabold tracking-tight text-slate-900">LMS Anti Curang</h1>
+            <p class="text-xs font-medium text-purple-600">MAN 4 Hulu Sungai Tengah</p>
+          </div>
+        </div>
+        <button type="button" onclick="toggleAppFullscreen()" title="Mode Layar Penuh" class="p-2.5 rounded-xl bg-slate-100 hover:bg-purple-50 text-slate-600 hover:text-purple-700 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+          </svg>
+        </button>
+      </div>
+
+      <div id="previewBadgeLogin" class="mb-4 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center justify-between">
+        <span class="font-semibold">Mode Preview Aktif</span>
+        <span>Data simulasi lokal</span>
+      </div>
+
+      <!-- Tab Peran Login -->
+      <div class="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 mb-5">
+        <button type="button" id="tabRolePeserta" onclick="switchLoginRole('peserta')" class="py-2 text-xs font-bold rounded-xl bg-white text-purple-700 shadow-sm transition">Peserta Ujian</button>
+        <button type="button" id="tabRoleAdmin" onclick="switchLoginRole('admin')" class="py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition">Pengawas / Admin</button>
+      </div>
+
+      <!-- Form Login Peserta -->
+      <form id="formLoginPeserta" onsubmit="handlePesertaLogin(event)" autocomplete="off" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Username / NISN</label>
+          <input id="pesertaUsername" type="text" required autocomplete="off" placeholder="Contoh: ari01417" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+          <input id="pesertaPassword" type="password" required autocomplete="new-password" placeholder="Masukkan kata sandi" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <button type="submit" class="w-full btn-primary-grad text-white font-bold text-sm py-3 rounded-2xl shadow-md">Masuk Sebagai Peserta</button>
+      </form>
+
+      <!-- Form Login Admin -->
+      <form id="formLoginAdmin" onsubmit="handleAdminLogin(event)" autocomplete="off" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Email Pengawas / Admin</label>
+          <input id="adminEmail" type="email" required autocomplete="off" placeholder="admin@man4hst.sch.id" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Password Admin</label>
+          <input id="adminPassword" type="password" required autocomplete="new-password" placeholder="Masukkan kata sandi admin" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <button type="submit" class="w-full btn-primary-grad text-white font-bold text-sm py-3 rounded-2xl shadow-md">Masuk Panel Pengawas</button>
+      </form>
+
+      <!-- Quick Login Preview -->
+      <div id="previewQuickBox" class="mt-5 pt-4 border-t border-slate-100">
+        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Akses Cepat Mode Preview</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="quickLoginPreview('peserta')" class="py-2 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold transition">Demo Peserta</button>
+          <button type="button" onclick="quickLoginPreview('admin')" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">Demo Admin</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APLIKASI UTAMA (SETELAH LOGIN) -->
+  <div id="appShell" class="hidden min-h-screen">
+
+    <!-- Sidebar Desktop -->
+    <aside class="desktop-sidebar glass-card border-r border-slate-200/80 p-5">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-2xl hero-gradient flex items-center justify-center text-white font-bold shadow">M4</div>
+        <div>
+          <p class="text-sm font-extrabold text-slate-900 leading-tight">LMS MAN 4 HST</p>
+          <p id="sidebarRoleLabel" class="text-[11px] font-semibold text-purple-600">Portal Ujian</p>
+        </div>
+      </div>
+
+      <nav id="desktopNavList" class="space-y-1.5 flex-1"></nav>
+
+      <div class="pt-4 border-t border-slate-100 space-y-2">
+        <button type="button" onclick="toggleAppFullscreen()" class="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-purple-50 text-slate-700 hover:text-purple-700 text-xs font-bold transition">
+          <span>Layar Penuh</span>
+        </button>
+        <button type="button" onclick="logoutApp()" class="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition">
+          <span>Keluar</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Konten Utama -->
+    <main class="main-content-shell">
+      <div class="max-w-5xl mx-auto p-4 sm:p-6 space-y-5">
+
+        <!-- Banner Status Pengawasan Saat Ujian Aktif -->
+        <div id="activeExamBar" class="hidden rounded-2xl bg-slate-900 text-white p-4 shadow-lg flex flex-wrap items-center justify-between gap-3 border border-purple-400/30">
+          <div class="flex items-center gap-3">
+            <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-purple-300">Sesi Ujian Berlangsung • Anti Curang Aktif</p>
+              <p class="text-xs text-slate-300">Portal dibuka di tab terpisah. Jangan berpindah tab atau keluar layar.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="px-3 py-1.5 rounded-xl bg-white/10 text-xs font-mono font-bold">
+              Pelanggaran: <span id="liveViolationCount">0</span>
+            </div>
+            <button type="button" onclick="finishExamSession()" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition">Selesai Ujian</button>
+          </div>
+        </div>
+
+        <!-- VIEW PESERTA -->
+        <section id="pesertaSection" class="space-y-5 hidden">
+
+          <!-- Hero Card -->
+          <div class="hero-gradient rounded-3xl p-5 sm:p-7 text-white shadow-xl shadow-purple-500/20">
+            <div class="flex items-start justify-between gap-3 mb-5">
+              <div>
+                <span class="inline-block px-3 py-1 rounded-full bg-white/20 text-[11px] font-bold tracking-wider uppercase mb-2">Portal Peserta Ujian</span>
+                <div class="flex items-center gap-3 mt-1">
+                  <div id="pesertaAvatar" class="w-12 h-12 rounded-full border-2 border-white/80 bg-white/20 flex items-center justify-center text-lg font-extrabold">A</div>
+                  <div>
+                    <h2 id="pesertaNamaDisplay" class="text-xl sm:text-2xl font-extrabold leading-tight">Peserta</h2>
+                    <p id="pesertaMetaDisplay" class="text-xs sm:text-sm text-white/85 font-medium">Kelas • NISN</p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="toggleAppFullscreen()" title="Layar Penuh" class="p-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                  </svg>
+                </button>
+                <button type="button" onclick="logoutApp()" class="px-3.5 py-2 rounded-xl bg-white text-purple-700 hover:bg-purple-50 text-xs font-extrabold shadow transition">Keluar</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2.5 sm:gap-4 pt-2 border-t border-white/20 text-center">
+              <div class="bg-white/10 rounded-2xl p-2.5 sm:p-3">
+                <p id="statAktif" class="text-lg sm:text-2xl font-extrabold">0</p>
+                <p class="text-[11px] text-white/85 font-medium">Ujian Aktif</p>
+              </div>
+              <div class="bg-white/10 rounded-2xl p-2.5 sm:p-3">
+                <p id="statSelesai" class="text-lg sm:text-2xl font-extrabold">0</p>
+                <p class="text-[11px] text-white/85 font-medium">Selesai</p>
+              </div>
+              <div class="bg-white/10 rounded-2xl p-2.5 sm:p-3">
+                <p id="statPelanggaran" class="text-lg sm:text-2xl font-extrabold">Aman</p>
+                <p class="text-[11px] text-white/85 font-medium">Pelanggaran</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBMENU 1: PORTAL UJIAN -->
+          <div id="pesertaTabPortal" class="space-y-5">
+
+            <!-- Kartu Akses Cepat Mulai Ujian -->
+            <div class="glass-card rounded-3xl p-5 border border-purple-100">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-start sm:items-center gap-3.5 min-w-0">
+                  <div class="w-12 h-12 rounded-2xl hero-gradient text-white flex items-center justify-center shrink-0 shadow-md">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <h3 class="text-base font-extrabold text-slate-900 truncate">Mulai Ujian Langsung di Portal MAN 4 HST</h3>
+                    <p id="portalUrlPreview" class="text-xs text-slate-500 truncate"></p>
+                  </div>
+                </div>
+                <button type="button" onclick="openPortalLangsung()" class="w-full sm:w-auto btn-primary-grad text-white font-extrabold text-sm px-6 py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+                  </svg>
+                  <span>Mulai Ujian</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Baris Tombol "Semua" & "Portal Ujian" di Tengah -->
+            <div class="space-y-2.5">
+              <h3 class="text-sm font-extrabold text-slate-800">Mata Pelajaran &amp; Portal</h3>
+              <div class="flex flex-wrap items-center justify-center gap-3">
+                <button type="button" id="btnFilterSemua" onclick="setSubjectFilter('semua')" class="btn-emerald-grad text-white font-extrabold text-sm px-7 py-3 rounded-2xl shadow-md transition">
+                  Semua
+                </button>
+                <button type="button" id="btnFilterPortal" onclick="openPortalLangsung()" class="btn-primary-grad text-white font-extrabold text-sm px-7 py-3 rounded-2xl shadow-md flex items-center gap-2 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
+                  </svg>
+                  <span>Portal Ujian</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Daftar Jadwal / Sesi Ujian -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-extrabold text-slate-800">Jadwal &amp; Portal Ujian</h3>
+                <span id="jadwalCountBadge" class="text-xs font-semibold text-slate-500">0 Ujian</span>
+              </div>
+              <div id="jadwalUjianList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+            </div>
+          </div>
+
+          <!-- SUBMENU 2: MATERI & INFO -->
+          <div id="pesertaTabMateri" class="space-y-3 hidden">
+            <h3 class="text-base font-extrabold text-slate-900">Materi &amp; Informasi Ujian</h3>
+            <div id="materiListContainer" class="space-y-3"></div>
+          </div>
+
+          <!-- SUBMENU 3: INTEGRITAS -->
+          <div id="pesertaTabIntegritas" class="space-y-3 hidden">
+            <h3 class="text-base font-extrabold text-slate-900">Riwayat Integritas &amp; Pelanggaran</h3>
+            <div id="integritasListContainer" class="space-y-2.5"></div>
+          </div>
+        </section>
+
+        <!-- VIEW ADMIN / PENGAWAS -->
+        <section id="adminSection" class="space-y-5 hidden">
+          <div class="hero-gradient rounded-3xl p-5 sm:p-6 text-white shadow-lg flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span class="inline-block px-3 py-1 rounded-full bg-white/20 text-[11px] font-bold uppercase tracking-wider mb-1.5">Panel Pengawas &amp; Admin</span>
+              <h2 class="text-xl sm:text-2xl font-extrabold">Monitoring &amp; Manajemen Peserta</h2>
+              <p class="text-xs sm:text-sm text-white/85">MAN 4 Hulu Sungai Tengah</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="openPortalLangsung()" class="px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition">Buka Portal</button>
+              <button type="button" onclick="logoutApp()" class="px-4 py-2 rounded-xl bg-white text-purple-700 hover:bg-purple-50 text-xs font-extrabold transition">Keluar</button>
+            </div>
+          </div>
+
+          <!-- Tab Navigasi Admin -->
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="adminBtnLive" onclick="switchAdminTab('live')" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary-grad text-white">Pengawasan Live</button>
+            <button type="button" id="adminBtnPeserta" onclick="switchAdminTab('peserta')" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200">Data Peserta</button>
+            <button type="button" id="adminBtnMateri" onclick="switchAdminTab('materi')" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200">Materi &amp; Info</button>
+            <button type="button" id="adminBtnLog" onclick="switchAdminTab('log')" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200">Log Pelanggaran</button>
+          </div>
+
+          <!-- Admin Tab: Pengawasan Live -->
+          <div id="adminTabLive" class="glass-card rounded-3xl p-5 border border-slate-100 space-y-3">
+            <h3 class="text-base font-extrabold text-slate-900">Status Sesi Peserta</h3>
+            <div id="adminLiveContainer" class="space-y-2.5"></div>
+          </div>
+
+          <!-- Admin Tab: Tambah & Kelola Peserta -->
+          <div id="adminTabPeserta" class="hidden space-y-4">
+            <form onsubmit="handleAddPeserta(event)" autocomplete="off" class="glass-card rounded-3xl p-5 border border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <input id="newPesertaNama" type="text" required placeholder="Nama Lengkap" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <input id="newPesertaKelas" type="text" required placeholder="Kelas (cth: XI A)" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <input id="newPesertaUsername" type="text" required autocomplete="off" placeholder="Username / NISN" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <div class="flex gap-2">
+                <input id="newPesertaPassword" type="text" required autocomplete="new-password" placeholder="Password" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+                <button type="submit" class="btn-primary-grad text-white font-bold text-xs px-4 py-2.5 rounded-xl shrink-0">Tambah</button>
+              </div>
+            </form>
+
+            <div class="glass-card rounded-3xl p-5 border border-slate-100 space-y-2.5">
+              <h3 class="text-base font-extrabold text-slate-900">Daftar Peserta Terdaftar</h3>
+              <div id="adminPesertaList" class="space-y-2"></div>
+            </div>
+          </div>
+
+          <!-- Admin Tab: Materi & Info -->
+          <div id="adminTabMateri" class="hidden space-y-4">
+            <form onsubmit="handleAddMateri(event)" class="glass-card rounded-3xl p-5 border border-slate-100 space-y-3">
+              <h3 class="text-base font-extrabold text-slate-900">Tambah Informasi / Tata Tertib</h3>
+              <input id="newMateriJudul" type="text" required placeholder="Judul Informasi" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm" />
+              <textarea id="newMateriKonten" rows="3" required placeholder="Isi pengumuman atau tata tertib ujian..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm"></textarea>
+              <button type="submit" class="btn-primary-grad text-white font-bold text-xs px-5 py-2.5 rounded-xl">Simpan Informasi</button>
+            </form>
+            <div id="adminMateriList" class="space-y-2.5"></div>
+          </div>
+
+          <!-- Admin Tab: Log Pelanggaran -->
+          <div id="adminTabLog" class="hidden glass-card rounded-3xl p-5 border border-slate-100 space-y-2.5">
+            <h3 class="text-base font-extrabold text-slate-900">Log Pelanggaran Anti Curang</h3>
+            <div id="adminLogList" class="space-y-2"></div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Bottom Navigation HP -->
+    <nav id="mobileBottomNav" class="mobile-bottom-nav glass-card border border-purple-100 px-2 py-1.5 flex items-center justify-around shadow-xl"></nav>
+  </div>
+
+  <script>
+    var sbClient = null;
+    if (!IS_PREVIEW && typeof window.supabase !== "undefined" && SUPABASE_URL.indexOf("http") === 0) {
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    var deferredInstallPrompt = null;
+    var currentUser = null;
+    var currentRole = "peserta";
+    var currentPesertaTab = "portal";
+    var currentAdminTab = "live";
+    var subjectFilter = "semua";
+    var examActive = false;
+    var violationCount = 0;
+
+    var stateData = {
+      peserta: IS_PREVIEW ? [
+        { id: "p-1", nama: "ARI", kelas: "XI A", nisn: "01417", username: "ari01417", password_text: "M4n4hst#2026", status_ujian: "Siap", pelanggaran: 0 }
+      ] : [],
+      jadwal: IS_PREVIEW ? [
+        {
+          id: "j-1",
+          mapel: "Portal Utama Ujian",
+          judul: "Portal Ujian MAN 4 HST",
+          url: DEFAULT_PORTAL_URL,
+          durasi: "90 Menit",
+          status: "Aktif"
+        }
+      ] : [],
+      materi: IS_PREVIEW ? [
+        {
+          id: "m-1",
+          judul: "Tata Tertib Ujian Anti Curang",
+          konten: "Klik Mulai Ujian untuk membuka portal resmi MAN 4 HST. Jangan berpindah tab atau keluar layar penuh selama ujian berlangsung.",
+          tanggal: "2026"
+        }
+      ] : [],
+      logs: []
+    };
+
+    function showToast(message, isWarn) {
+      var box = document.getElementById("toastBox");
+      var dot = document.getElementById("toastDot");
+      var text = document.getElementById("toastText");
+      if (!box || !text) return;
+      text.textContent = message;
+      if (dot) {
+        dot.className = "w-2.5 h-2.5 rounded-full shrink-0 " + (isWarn ? "bg-amber-400" : "bg-emerald-400");
+      }
+      box.classList.remove("hidden");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(function () {
+        box.classList.add("hidden");
+      }, 3200);
+    }
+
+    function enterAppFullscreen() {
+      try {
+        var el = document.documentElement;
+        if (!document.fullscreenElement && el.requestFullscreen) {
+          el.requestFullscreen().catch(function () {});
+        }
+      } catch (e) {}
+    }
+
+    function toggleAppFullscreen() {
+      try {
+        if (!document.fullscreenElement) {
+          var el = document.documentElement;
+          if (el.requestFullscreen) {
+            el.requestFullscreen().catch(function () {});
+          }
+        } else if (document.exitFullscreen) {
+          document.exitFullscreen().catch(function () {});
+        }
+      } catch (e) {}
+    }
+
+    document.addEventListener("pointerdown", function () {
+      if (currentUser) {
+        enterAppFullscreen();
+      }
+    }, { passive: true });
+
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      var banner = document.getElementById("installBanner");
+      if (banner) banner.classList.remove("hidden");
+    });
+
+    function triggerPwaInstall() {
+      if (!deferredInstallPrompt) {
+        showToast("Gunakan menu browser untuk menambahkan ke layar utama.", true);
+        return;
+      }
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(function () {
+        deferredInstallPrompt = null;
+        dismissInstallBanner();
+      });
+    }
+
+    function dismissInstallBanner() {
+      var banner = document.getElementById("installBanner");
+      if (banner) banner.classList.add("hidden");
+    }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      });
+    }
+
+    function switchLoginRole(role) {
+      var tabP = document.getElementById("tabRolePeserta");
+      var tabA = document.getElementById("tabRoleAdmin");
+      var formP = document.getElementById("formLoginPeserta");
+      var formA = document.getElementById("formLoginAdmin");
+      if (role === "admin") {
+        tabA.className = "py-2 text-xs font-bold rounded-xl bg-white text-purple-700 shadow-sm transition";
+        tabP.className = "py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
+        formA.classList.remove("hidden");
+        formP.classList.add("hidden");
+      } else {
+        tabP.className = "py-2 text-xs font-bold rounded-xl bg-white text-purple-700 shadow-sm transition";
+        tabA.className = "py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
+        formP.classList.remove("hidden");
+        formA.classList.add("hidden");
+      }
+    }
+
+    function quickLoginPreview(role) {
+      if (!IS_PREVIEW) return;
+      enterAppFullscreen();
+      if (role === "admin") {
+        currentRole = "admin";
+        currentUser = { nama: "Pengawas MAN 4 HST", email: "admin@man4hst.sch.id" };
+        openMainApp();
+      } else {
+        currentRole = "peserta";
+        currentUser = stateData.peserta[0];
+        openMainApp();
+      }
+    }
+
+    async function handlePesertaLogin(event) {
+      event.preventDefault();
+      enterAppFullscreen();
+      var u = document.getElementById("pesertaUsername").value.trim();
+      var p = document.getElementById("pesertaPassword").value.trim();
+
+      if (IS_PREVIEW) {
+        var found = stateData.peserta.find(function (item) {
+          return item.username.toLowerCase() === u.toLowerCase() && item.password_text === p;
+        });
+        if (!found) {
+          found = {
+            id: "p-" + Date.now(),
+            nama: u.toUpperCase(),
+            kelas: "XI A",
+            nisn: u,
+            username: u,
+            password_text: p,
+            status_ujian: "Siap",
+            pelanggaran: 0
+          };
+          stateData.peserta.push(found);
+        }
+        currentRole = "peserta";
+        currentUser = found;
+        openMainApp();
+        return;
+      }
+
+      if (!sbClient) {
+        showToast("Konfigurasi Supabase belum diatur.", true);
+        return;
+      }
+
+      try {
+        var res = await sbClient
+          .from("peserta")
+          .select("*")
+          .eq("username", u)
+          .eq("password_text", p)
+          .maybeSingle();
+
+        if (res.error || !res.data) {
+          showToast("Username atau password peserta tidak valid.", true);
+          return;
+        }
+        currentRole = "peserta";
+        currentUser = res.data;
+        openMainApp();
+      } catch (err) {
+        showToast("Gagal terhubung ke database.", true);
+      }
+    }
+
+    async function handleAdminLogin(event) {
+      event.preventDefault();
+      enterAppFullscreen();
+      var email = document.getElementById("adminEmail").value.trim();
+      var password = document.getElementById("adminPassword").value.trim();
+
+      if (IS_PREVIEW) {
+        currentRole = "admin";
+        currentUser = { nama: "Pengawas MAN 4 HST", email: email };
+        openMainApp();
+        return;
+      }
+
+      if (!sbClient) {
+        showToast("Konfigurasi Supabase belum diatur.", true);
+        return;
+      }
+
+      try {
+        var authRes = await sbClient.auth.signInWithPassword({ email: email, password: password });
+        if (authRes.error || !authRes.data.user) {
+          showToast("Login admin gagal. Periksa email & password.", true);
+          return;
+        }
+        currentRole = "admin";
+        currentUser = { nama: authRes.data.user.email, email: authRes.data.user.email };
+        openMainApp();
+      } catch (err) {
+        showToast("Terjadi kesalahan saat login admin.", true);
+      }
+    }
+
+    function openMainApp() {
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("appShell").classList.remove("hidden");
+      document.getElementById("portalUrlPreview").textContent = DEFAULT_PORTAL_URL;
+
+      if (currentRole === "admin") {
+        document.getElementById("sidebarRoleLabel").textContent = "Panel Pengawas";
+        document.getElementById("adminSection").classList.remove("hidden");
+        document.getElementById("pesertaSection").classList.add("hidden");
+        renderAdminNav();
+        refreshAdminViews();
+      } else {
+        document.getElementById("sidebarRoleLabel").textContent = "Portal Peserta";
+        document.getElementById("pesertaSection").classList.remove("hidden");
+        document.getElementById("adminSection").classList.add("hidden");
+        renderPesertaProfile();
+        renderPesertaNav();
+        refreshPesertaViews();
+      }
+    }
+
+    function renderPesertaProfile() {
+      if (!currentUser) return;
+      var nama = currentUser.nama || "Peserta";
+      document.getElementById("pesertaAvatar").textContent = nama.charAt(0).toUpperCase();
+      document.getElementById("pesertaNamaDisplay").textContent = nama;
+      document.getElementById("pesertaMetaDisplay").textContent =
+        (currentUser.kelas || "Kelas") + " • NISN: " + (currentUser.nisn || currentUser.username || "-");
+      updatePesertaStats();
+    }
+
+    function updatePesertaStats() {
+      var aktifEl = document.getElementById("statAktif");
+      var selesaiEl = document.getElementById("statSelesai");
+      var pelEl = document.getElementById("statPelanggaran");
+      if (aktifEl) aktifEl.textContent = examActive ? "1" : "0";
+      if (selesaiEl) selesaiEl.textContent = currentUser && currentUser.status_ujian === "Selesai" ? "1" : "0";
+      if (pelEl) pelEl.textContent = violationCount > 0 ? String(violationCount) : "Aman";
+      var liveCount = document.getElementById("liveViolationCount");
+      if (liveCount) liveCount.textContent = String(violationCount);
+    }
+
+    function renderPesertaNav() {
+      var items = [
+        { id: "portal", label: "Portal Ujian" },
+        { id: "materi", label: "Materi & Info" },
+        { id: "integritas", label: "Integritas" }
+      ];
+      var desk = document.getElementById("desktopNavList");
+      var mob = document.getElementById("mobileBottomNav");
+
+      desk.innerHTML = items.map(function (it) {
+        var active = currentPesertaTab === it.id;
+        return '<button type="button" onclick="switchPesertaTab('' + it.id + '')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
+          (active ? "btn-primary-grad text-white shadow" : "text-slate-600 hover:bg-slate-100") +
+          '">' + it.label + "</button>";
+      }).join("");
+
+      mob.innerHTML = items.map(function (it) {
+        var active = currentPesertaTab === it.id;
+        return '<button type="button" onclick="switchPesertaTab('' + it.id + '')" class="flex-1 py-2 px-2 rounded-2xl text-xs font-bold transition ' +
+          (active ? "text-purple-700 bg-purple-50" : "text-slate-500") +
+          '">' + it.label + "</button>";
+      }).join("");
+    }
+
+    function switchPesertaTab(tab) {
+      currentPesertaTab = tab;
+      document.getElementById("pesertaTabPortal").classList.toggle("hidden", tab !== "portal");
+      document.getElementById("pesertaTabMateri").classList.toggle("hidden", tab !== "materi");
+      document.getElementById("pesertaTabIntegritas").classList.toggle("hidden", tab !== "integritas");
+      renderPesertaNav();
+    }
+
+    function renderAdminNav() {
+      var items = [
+        { id: "live", label: "Pengawasan Live" },
+        { id: "peserta", label: "Data Peserta" },
+        { id: "materi", label: "Materi & Info" },
+        { id: "log", label: "Log Pelanggaran" }
+      ];
+      var desk = document.getElementById("desktopNavList");
+      var mob = document.getElementById("mobileBottomNav");
+
+      desk.innerHTML = items.map(function (it) {
+        var active = currentAdminTab === it.id;
+        return '<button type="button" onclick="switchAdminTab('' + it.id + '')" class="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition ' +
+          (active ? "btn-primary-grad text-white shadow" : "text-slate-600 hover:bg-slate-100") +
+          '">' + it.label + "</button>";
+      }).join("");
+
+      mob.innerHTML = items.map(function (it) {
+        var active = currentAdminTab === it.id;
+        return '<button type="button" onclick="switchAdminTab('' + it.id + '')" class="flex-1 py-2 px-1.5 rounded-2xl text-[11px] font-bold transition ' +
+          (active ? "text-purple-700 bg-purple-50" : "text-slate-500") +
+          '">' + it.label + "</button>";
+      }).join("");
+    }
+
+    function switchAdminTab(tab) {
+      currentAdminTab = tab;
+      document.getElementById("adminTabLive").classList.toggle("hidden", tab !== "live");
+      document.getElementById("adminTabPeserta").classList.toggle("hidden", tab !== "peserta");
+      document.getElementById("adminTabMateri").classList.toggle("hidden", tab !== "materi");
+      document.getElementById("adminTabLog").classList.toggle("hidden", tab !== "log");
+      renderAdminNav();
+    }
+
+    function setSubjectFilter(mode) {
+      subjectFilter = mode;
+      refreshPesertaViews();
+    }
+
+    function openPortalLangsung(customUrl) {
+      enterAppFullscreen();
+      var targetUrl = customUrl || DEFAULT_PORTAL_URL;
+      examActive = true;
+      if (currentUser) {
+        currentUser.status_ujian = "Sedang Ujian";
+      }
+      updatePesertaStats();
+      document.getElementById("activeExamBar").classList.remove("hidden");
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+      showToast("Portal Ujian MAN 4 HST dibuka. Pengawasan aktif.");
+    }
+
+    function finishExamSession() {
+      examActive = false;
+      if (currentUser) {
+        currentUser.status_ujian = "Selesai";
+      }
+      document.getElementById("activeExamBar").classList.add("hidden");
+      updatePesertaStats();
+      showToast("Sesi ujian ditandai selesai.");
+    }
+
+    function recordViolation(reason) {
+      if (!examActive || currentRole !== "peserta") return;
+      violationCount += 1;
+      if (currentUser) {
+        currentUser.pelanggaran = violationCount;
+      }
+      stateData.logs.unshift({
+        id: "log-" + Date.now(),
+        nama: currentUser ? currentUser.nama : "Peserta",
+        kelas: currentUser ? currentUser.kelas : "-",
+        alasan: reason,
+        waktu: new Date().toLocaleTimeString("id-ID")
+      });
+      updatePesertaStats();
+      refreshPesertaViews();
+      showToast("Peringatan anti curang: " + reason, true);
+    }
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden && examActive && currentRole === "peserta") {
+        recordViolation("Berpindah tab atau menyembunyikan jendela ujian");
+      }
+    });
+
+    window.addEventListener("blur", function () {
+      if (examActive && currentRole === "peserta") {
+        recordViolation("Kehilangan fokus layar selama ujian berlangsung");
+      }
+    });
+
+    async function refreshPesertaViews() {
+      var listEl = document.getElementById("jadwalUjianList");
+      var badgeEl = document.getElementById("jadwalCountBadge");
+      var items = stateData.jadwal || [];
+
+      if (!IS_PREVIEW && sbClient) {
+        try {
+          var qJ = await sbClient.from("jadwal_ujian").select("*");
+          if (!qJ.error && Array.isArray(qJ.data) && qJ.data.length > 0) {
+            items = qJ.data;
+          }
+        } catch (e) {}
+      }
+
+      badgeEl.textContent = items.length + " Ujian";
+      if (!items.length) {
+        listEl.innerHTML = '<div class="glass-card rounded-2xl p-5 text-xs text-slate-500">Belum ada jadwal tambahan. Gunakan tombol <strong>Mulai Ujian</strong> di atas.</div>';
+      } else {
+        listEl.innerHTML = items.map(function (it) {
+          var u = it.url || DEFAULT_PORTAL_URL;
+          return '<div class="glass-card rounded-2xl p-4 border border-slate-100 flex items-center justify-between gap-3">' +
+            '<div class="min-w-0">' +
+              '<span class="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 mb-1">' + (it.mapel || "Portal") + "</span>" +
+              '<h4 class="text-sm font-extrabold text-slate-900 truncate">' + (it.judul || "Portal Ujian MAN 4 HST") + "</h4>" +
+              '<p class="text-xs text-slate-500">Durasi: ' + (it.durasi || "90 Menit") + "</p>" +
+            "</div>" +
+            '<button type="button" onclick="openPortalLangsung('' + u.replace(/'/g, "\'") + '')" class="btn-primary-grad text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shrink-0">Mulai</button>' +
+          "</div>";
+        }).join("");
+      }
+
+      var matEl = document.getElementById("materiListContainer");
+      var mats = stateData.materi || [];
+      if (!IS_PREVIEW && sbClient) {
+        try {
+          var qM = await sbClient.from("materi_info").select("*");
+          if (!qM.error && Array.isArray(qM.data)) mats = qM.data;
+        } catch (e) {}
+      }
+      matEl.innerHTML = mats.length
+        ? mats.map(function (m) {
+            return '<div class="glass-card rounded-2xl p-4 border border-slate-100">' +
+              '<h4 class="text-sm font-extrabold text-slate-900 mb-1">' + m.judul + "</h4>" +
+              '<p class="text-xs text-slate-600 leading-relaxed">' + m.konten + "</p>" +
+            "</div>";
+          }).join("")
+        : '<div class="glass-card rounded-2xl p-5 text-xs text-slate-500">Belum ada informasi materi.</div>';
+
+      var intEl = document.getElementById("integritasListContainer");
+      var myLogs = stateData.logs.filter(function (l) {
+        return !currentUser || l.nama === currentUser.nama;
+      });
+      intEl.innerHTML = myLogs.length
+        ? myLogs.map(function (l) {
+            return '<div class="glass-card rounded-2xl p-3.5 border border-amber-200 bg-amber-50/50 flex items-center justify-between gap-2">' +
+              '<div class="text-xs font-semibold text-amber-900">' + l.alasan + "</div>" +
+              '<span class="text-[11px] font-mono text-amber-700 shrink-0">' + l.waktu + "</span>" +
+            "</div>";
+          }).join("")
+        : '<div class="glass-card rounded-2xl p-5 text-xs text-emerald-700 bg-emerald-50/50 border border-emerald-100 font-semibold">Status aman. Belum ada pelanggaran tercatat.</div>';
+    }
+
+    async function refreshAdminViews() {
+      if (!IS_PREVIEW && sbClient) {
+        try {
+          var pRes = await sbClient.from("peserta").select("*");
+          if (!pRes.error && Array.isArray(pRes.data)) {
+            stateData.peserta = pRes.data;
+          }
+          var mRes = await sbClient.from("materi_info").select("*");
+          if (!mRes.error && Array.isArray(mRes.data)) {
+            stateData.materi = mRes.data;
+          }
+        } catch (e) {}
+      }
+
+      var liveBox = document.getElementById("adminLiveContainer");
+      liveBox.innerHTML = stateData.peserta.length
+        ? stateData.peserta.map(function (p) {
+            return '<div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-3">' +
+              "<div>" +
+                '<p class="text-xs font-extrabold text-slate-900">' + p.nama + ' <span class="text-slate-400 font-normal">(' + p.kelas + ")</span></p>" +
+                '<p class="text-[11px] text-slate-500">Username: ' + p.username + "</p>" +
+              "</div>" +
+              '<div class="text-right">' +
+                '<span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700">' + (p.status_ujian || "Siap") + "</span>" +
+                '<p class="text-[11px] text-slate-500 mt-0.5">Pelanggaran: ' + (p.pelanggaran || 0) + "</p>" +
+              "</div>" +
+            "</div>";
+          }).join("")
+        : '<p class="text-xs text-slate-500">Belum ada peserta terdaftar.</p>';
+
+      var pList = document.getElementById("adminPesertaList");
+      pList.innerHTML = stateData.peserta.length
+        ? stateData.peserta.map(function (p, idx) {
+            return '<div class="p-3 rounded-2xl bg-white border border-slate-200 flex items-center justify-between gap-2">' +
+              '<div class="text-xs"><span class="font-bold text-slate-900">' + p.nama + '</span> • ' + p.kelas + ' • <span class="font-mono text-purple-700">' + p.username + "</span></div>" +
+              '<button type="button" onclick="removePeserta(' + idx + ')" class="text-xs font-bold text-rose-600 hover:underline">Hapus</button>' +
+            "</div>";
+          }).join("")
+        : '<p class="text-xs text-slate-500">Belum ada data peserta.</p>';
+
+      var mList = document.getElementById("adminMateriList");
+      mList.innerHTML = stateData.materi.map(function (m) {
+        return '<div class="glass-card rounded-2xl p-4 border border-slate-100">' +
+          '<h4 class="text-xs font-extrabold text-slate-900">' + m.judul + "</h4>" +
+          '<p class="text-xs text-slate-600 mt-1">' + m.konten + "</p>" +
+        "</div>";
+      }).join("");
+
+      var lList = document.getElementById("adminLogList");
+      lList.innerHTML = stateData.logs.length
+        ? stateData.logs.map(function (l) {
+            return '<div class="p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs">' +
+              '<div><span class="font-bold">' + l.nama + "</span> (" + l.kelas + ") — " + l.alasan + "</div>" +
+              '<span class="font-mono text-amber-800">' + l.waktu + "</span>" +
+            "</div>";
+          }).join("")
+        : '<p class="text-xs text-slate-500">Belum ada log pelanggaran.</p>';
+    }
+
+    async function handleAddPeserta(event) {
+      event.preventDefault();
+      var nama = document.getElementById("newPesertaNama").value.trim();
+      var kelas = document.getElementById("newPesertaKelas").value.trim();
+      var username = document.getElementById("newPesertaUsername").value.trim();
+      var password_text = document.getElementById("newPesertaPassword").value.trim();
+
+      var newRow = {
+        id: "p-" + Date.now(),
+        nama: nama,
+        kelas: kelas,
+        nisn: username,
+        username: username,
+        password_text: password_text,
+        status_ujian: "Siap",
+        pelanggaran: 0
+      };
+
+      if (!IS_PREVIEW && sbClient) {
+        try {
+          var ins = await sbClient.from("peserta").insert([{
+            nama: nama,
+            kelas: kelas,
+            nisn: username,
+            username: username,
+            password_text: password_text,
+            status_ujian: "Siap",
+            pelanggaran: 0
+          }]);
+          if (ins.error) {
+            showToast("Gagal menyimpan peserta ke Supabase.", true);
+            return;
+          }
+        } catch (e) {
+          showToast("Kesalahan jaringan saat menambah peserta.", true);
+          return;
+        }
+      }
+
+      stateData.peserta.push(newRow);
+      event.target.reset();
+      refreshAdminViews();
+      showToast("Peserta berhasil ditambahkan.");
+    }
+
+    async function removePeserta(idx) {
+      var target = stateData.peserta[idx];
+      if (!target) return;
+      if (!IS_PREVIEW && sbClient && target.id) {
+        try {
+          await sbClient.from("peserta").delete().eq("id", target.id);
+        } catch (e) {}
+      }
+      stateData.peserta.splice(idx, 1);
+      refreshAdminViews();
+      showToast("Peserta dihapus.");
+    }
+
+    async function handleAddMateri(event) {
+      event.preventDefault();
+      var judul = document.getElementById("newMateriJudul").value.trim();
+      var konten = document.getElementById("newMateriKonten").value.trim();
+      var item = {
+        id: "m-" + Date.now(),
+        judul: judul,
+        konten: konten,
+        tanggal: new Date().toLocaleDateString("id-ID")
+      };
+
+      if (!IS_PREVIEW && sbClient) {
+        try {
+          await sbClient.from("materi_info").insert([{ judul: judul, konten: konten }]);
+        } catch (e) {}
+      }
+
+      stateData.materi.unshift(item);
+      event.target.reset();
+      refreshAdminViews();
+      showToast("Informasi berhasil disimpan.");
+    }
+
+    async function logoutApp() {
+      examActive = false;
+      if (!IS_PREVIEW && sbClient && currentRole === "admin") {
+        try {
+          await sbClient.auth.signOut();
+        } catch (e) {}
+      }
+      currentUser = null;
+      document.getElementById("activeExamBar").classList.add("hidden");
+      document.getElementById("appShell").classList.add("hidden");
+      document.getElementById("loginView").classList.remove("hidden");
+    }
+
+    (function initPreviewBadge() {
+      var badge = document.getElementById("previewBadgeLogin");
+      var quick = document.getElementById("previewQuickBox");
+      if (!IS_PREVIEW) {
+        if (badge) badge.classList.add("hidden");
+        if (quick) quick.classList.add("hidden");
+      }
+    })();
+  </script>
+</body>
+</html>
